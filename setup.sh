@@ -99,7 +99,7 @@ EOT
 # Modify SSH configuration
 modify_ssh_config() {
     print_status "Modifying SSH configuration..."
-    sudo tee -a /etc/ssh/sshd_config > /dev/null <<EOT
+    sudo tee -a /etc/ssh/sshd_config <<EOT
 
 # HiveLab configuration
 Match User *,!root
