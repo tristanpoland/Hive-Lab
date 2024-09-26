@@ -68,6 +68,7 @@ create_on_login_script() {
     cat > /opt/hivelab/on-login.sh <<EOT
 #!/bin/bash
 
+# Check if bypass command is used
 if [ "\$SSH_ORIGINAL_COMMAND" == "bypass" ]; then
     exec \$SHELL
     exit 0
@@ -81,13 +82,14 @@ USERNAME=\$(whoami)
 # Get the container ID
 CONTAINER_ID=\$(docker ps --filter name=hivelab-\$USERNAME --format '{{.ID}}')
 
+# Check if the container ID is empty
 if [ -z "\$CONTAINER_ID" ]; then
-    echo "Failed to start or find your HiveLab container. Please contact support."
-    exit 1
+    echo "Failed to start or find your HiveLab container. Dropping to shell."
+    exec /bin/bash  # Drop to a shell if the container cannot be started
 fi
 
-# Execute an interactive bash session in the user's container
-exec docker exec -it -e TERM=\$TERM -e LANG=\$LANG -u vscode \$CONTAINER_ID /bin/bash -l
+# Use exec to start an interactive Bash session in the user's container
+exec docker exec -it -e TERM=\$TERM -e LANG=\$LANG -u vscode \$CONTAINER_ID /bin/bash
 EOT
     chmod +x /opt/hivelab/on-login.sh
 }
@@ -99,7 +101,7 @@ modify_ssh_config() {
 
 # HiveLab configuration
 Match User *,!root
-    ForceCommand /bin/bash -c 'echo "Welcome to HiveLab!"; exec \$SHELL'
+    ForceCommand /bin/bash -c 'exec /opt/hivelab/on-login.sh'
 EOT
 }
 
