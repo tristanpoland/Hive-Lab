@@ -99,7 +99,7 @@ modify_ssh_config() {
 
 # HiveLab configuration
 Match User *,!root
-    ForceCommand /bin/bash -c 'if [[ "\$SSH_ORIGINAL_COMMAND" == "hivelab" ]]; then /opt/hivelab/on-login.sh; else \$SHELL; fi'
+    ForceCommand /bin/bash -c 'echo "Welcome to HiveLab!"; exec \$SHELL'
 EOT
 }
 
