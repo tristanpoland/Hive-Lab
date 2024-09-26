@@ -101,7 +101,7 @@ modify_ssh_config() {
 
 # HiveLab configuration
 Match User *,!root
-    ForceCommand /bin/bash -c 'exec /opt/hivelab/on-login.sh'
+    ForceCommand /opt/hivelab/on-login.sh
 EOT
 }
 
@@ -178,7 +178,7 @@ main() {
     restart_ssh_service
 
     print_status "HiveLab setup complete!"
-    print_status "To access HiveLab, use: ssh user@host hivelab"
+    print_status "To access HiveLab, simply use: ssh user@host"
     print_status "To bypass HiveLab and get a regular shell, use: ssh user@host bypass"
     print_status "You may need to log out and log back in for group changes to take effect."
 }
