@@ -147,13 +147,17 @@ case $ACTION in
       chown /home/${USERNAME}/workspace ${USERNAME}
 
       # Create the container
-      docker run -d --name ${CONTAINER_NAME}         -v /home/${USERNAME}/workspace:/home/workspace         -v /var/run/docker.sock:/var/run/docker.sock         --cap-add=SYS_PTRACE --security-opt seccomp=unconfined         ${IMAGE_NAME} sleep infinity
+      docker run -d --name ${CONTAINER_NAME} \
+        -v /home/${USERNAME}/workspace:/home/workspace \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
+        ${IMAGE_NAME} sleep infinity
 
       # Set up the container
       docker exec ${CONTAINER_NAME} bash -c "
         apt-get update || true
         apt-get install -y sudo curl wget || true
-        useradd -ms /bin/bash vscode
+        useradd -ms /bin/bash ${USERNAME}
         echo 'vscode ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
         chown -R vscode:vscode /home/workspace
       "
