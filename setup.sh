@@ -4,11 +4,17 @@ set -e
 
 # Colors for output
 GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Function to print status messages
 print_status() {
     echo -e "${GREEN}[*] $1${NC}"
+}
+
+# Function to print warnings
+print_warning() {
+    echo -e "${YELLOW}[!] $1${NC}"
 }
 
 # Function to check if a command exists
@@ -30,44 +36,17 @@ check_and_set_arch() {
     esac
 }
 
-# Update package sources
-update_package_sources() {
-    print_status "Updating package sources..."
-    # Determine Ubuntu version
-    VERSION=$(lsb_release -cs)
-    
-    # Create a backup of the current sources.list
-    sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
-    
-    # Update sources.list
-    sudo tee /etc/apt/sources.list > /dev/null <<EOT
-deb http://ports.ubuntu.com/ubuntu-ports/ $VERSION main restricted universe multiverse
-deb-src http://ports.ubuntu.com/ubuntu-ports/ $VERSION main restricted universe multiverse
-
-deb http://ports.ubuntu.com/ubuntu-ports/ $VERSION-updates main restricted universe multiverse
-deb-src http://ports.ubuntu.com/ubuntu-ports/ $VERSION-updates main restricted universe multiverse
-
-deb http://ports.ubuntu.com/ubuntu-ports/ $VERSION-security main restricted universe multiverse
-deb-src http://ports.ubuntu.com/ubuntu-ports/ $VERSION-security main restricted universe multiverse
-
-deb http://ports.ubuntu.com/ubuntu-ports/ $VERSION-backports main restricted universe multiverse
-deb-src http://ports.ubuntu.com/ubuntu-ports/ $VERSION-backports main restricted universe multiverse
-EOT
-    
-    # Update package lists
-    sudo apt-get update
-}
-
 # Update package lists and upgrade existing packages
 update_and_upgrade() {
     print_status "Updating package lists and upgrading existing packages..."
-    sudo apt-get update && sudo apt-get upgrade -y
+    sudo apt-get update || print_warning "Some repositories may be temporarily unavailable. Continuing anyway..."
+    sudo apt-get upgrade -y || print_warning "Some packages couldn't be upgraded. Continuing anyway..."
 }
 
 # Install necessary packages
 install_packages() {
     print_status "Installing necessary packages..."
-    sudo apt-get install -y jq docker.io
+    sudo apt-get install -y jq docker.io || print_warning "Some packages couldn't be installed. Continuing anyway..."
 }
 
 # Set up Docker permissions
@@ -132,7 +111,7 @@ restart_ssh_service() {
     elif systemctl is-active --quiet sshd.service; then
         sudo systemctl restart sshd.service
     else
-        print_status "SSH service not found. Please ensure SSH is installed and configured."
+        print_warning "SSH service not found. Please ensure SSH is installed and configured."
     fi
 }
 
@@ -163,7 +142,8 @@ case \$ACTION in
       
       # Set up the container
       docker exec \${CONTAINER_NAME} bash -c "
-        apt-get update && apt-get install -y sudo curl wget
+        apt-get update || true
+        apt-get install -y sudo curl wget || true
         useradd -ms /bin/bash vscode
         echo 'vscode ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
         chown -R vscode:vscode /home/workspace
@@ -186,7 +166,6 @@ EOT
 # Main execution
 main() {
     check_and_set_arch
-    update_package_sources
     update_and_upgrade
     install_packages
     setup_docker_permissions
