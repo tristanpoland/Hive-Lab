@@ -11,73 +11,167 @@ print_status() {
     echo -e "${GREEN}[*] $1${NC}"
 }
 
-# Update and install dependencies
-print_status "Updating system and installing dependencies..."
-sudo apt-get update
-sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+# Function to check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
 
-# Install Docker
-print_status "Installing Docker..."
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker $USER
+# Check and set correct architecture
+check_and_set_arch() {
+    ARCH=$(dpkg --print-architecture)
+    case $ARCH in
+        amd64|arm64)
+            print_status "Architecture $ARCH is supported."
+            ;;
+        *)
+            print_status "Unsupported architecture: $ARCH. This script is designed for amd64 or arm64."
+            exit 1
+            ;;
+    esac
+}
 
-# Install Kubernetes tools
-print_status "Installing Kubernetes tools..."
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
-sudo apt-get update
-sudo apt-get install -y kubectl
+# Update package lists and upgrade existing packages
+update_and_upgrade() {
+    print_status "Updating package lists and upgrading existing packages..."
+    sudo apt-get update && sudo apt-get upgrade -y
+}
 
-# Install Minikube for local development
-print_status "Installing Minikube..."
-curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-chmod +x minikube
-sudo mv minikube /usr/local/bin/
+# Install necessary packages
+install_packages() {
+    print_status "Installing necessary packages..."
+    sudo apt-get install -y jq docker.io
+}
 
-# Install Helm
-print_status "Installing Helm..."
-curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+# Set up Docker permissions
+setup_docker_permissions() {
+    print_status "Setting up Docker permissions..."
+    sudo usermod -aG docker $USER
+}
 
-# Install BOSH CLI
-print_status "Installing BOSH CLI..."
-wget -O bosh https://github.com/cloudfoundry/bosh-cli/releases/download/v6.4.1/bosh-cli-6.4.1-linux-amd64
-chmod +x bosh
-sudo mv bosh /usr/local/bin/
+# Create HiveLab directory
+create_hivelab_directory() {
+    print_status "Creating HiveLab directory..."
+    sudo mkdir -p /opt/hivelab
+    sudo chown $USER:$USER /opt/hivelab
+}
 
-# Set up Minikube cluster
-print_status "Setting up Minikube cluster..."
-minikube start --driver=docker
+# Create on-login script
+create_on_login_script() {
+    print_status "Creating on-login script..."
+    cat > /opt/hivelab/on-login.sh <<EOT
+#!/bin/bash
 
-# Install Ingress controller
-print_status "Installing Ingress controller..."
-minikube addons enable ingress
+if [ "\$SSH_ORIGINAL_COMMAND" == "bypass" ]; then
+    exec \$SHELL
+    exit 0
+fi
 
-# Install Redis for state management
-print_status "Installing Redis..."
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm install redis bitnami/redis --set auth.enabled=false
+USERNAME=\$(whoami)
 
-# Set up monitoring tools
-print_status "Setting up Netdata for monitoring..."
-helm repo add netdata https://netdata.github.io/helmchart/
-helm install netdata netdata/netdata --set image.tag=latest
+# Start or ensure the user's container is running
+/opt/hivelab/manage_container.sh \$USERNAME start
 
-# Build and push the devcontainer image
-print_status "Building devcontainer image..."
-docker build -t boshpod-devcontainer:latest .
-docker push yourdockerrepo/boshpod-devcontainer:latest
+# Get the container ID
+CONTAINER_ID=\$(docker ps --filter name=hivelab-\$USERNAME --format '{{.ID}}')
 
-# Deploy Hive Lab components
-print_status "Deploying BOSHPod components..."
-kubectl apply -f kubernetes/
+if [ -z "\$CONTAINER_ID" ]; then
+    echo "Failed to start or find your HiveLab container. Please contact support."
+    exit 1
+fi
 
-# Print final instructions
-print_status "Hive Lab setup complete!"
-echo "Next steps:"
-echo "1. Configure your DNS to point to the Minikube IP: $(minikube ip)"
-echo "2. Set up your CI/CD pipeline"
-echo "3. Customize the Hive Lab components in the kubernetes/ directory"
-echo "4. Start developing and testing your Hive Lab system"
+# Execute an interactive bash session in the user's container
+exec docker exec -it -e TERM=\$TERM -e LANG=\$LANG -u vscode \$CONTAINER_ID /bin/bash -l
+EOT
+    chmod +x /opt/hivelab/on-login.sh
+}
 
-print_status "Remember to log out and log back in for Docker permissions to take effect."
+# Modify SSH configuration
+modify_ssh_config() {
+    print_status "Modifying SSH configuration..."
+    sudo tee -a /etc/ssh/sshd_config > /dev/null <<EOT
+
+# HiveLab configuration
+Match User *,!root
+    ForceCommand /bin/bash -c 'if [[ "\$SSH_ORIGINAL_COMMAND" == "hivelab" ]]; then /opt/hivelab/on-login.sh; else \$SHELL; fi'
+EOT
+}
+
+# Restart SSH service
+restart_ssh_service() {
+    print_status "Restarting SSH service..."
+    if systemctl is-active --quiet ssh.service; then
+        sudo systemctl restart ssh.service
+    elif systemctl is-active --quiet sshd.service; then
+        sudo systemctl restart sshd.service
+    else
+        print_status "SSH service not found. Please ensure SSH is installed and configured."
+    fi
+}
+
+# Create container management script
+create_container_management_script() {
+    print_status "Creating container management script..."
+    cat > /opt/hivelab/manage_container.sh <<EOT
+#!/bin/bash
+
+USERNAME=\$1
+ACTION=\$2
+
+CONTAINER_NAME="hivelab-\${USERNAME}"
+IMAGE_NAME="ubuntu:latest"
+
+case \$ACTION in
+  start)
+    if ! docker ps -a --format '{{.Names}}' | grep -q "^\${CONTAINER_NAME}\$"; then
+      # Create user's workspace directory if it doesn't exist
+      mkdir -p /home/\${USERNAME}/workspace
+      
+      # Create the container
+      docker run -d --name \${CONTAINER_NAME} \
+        -v /home/\${USERNAME}/workspace:/home/workspace \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
+        \${IMAGE_NAME} sleep infinity
+      
+      # Set up the container
+      docker exec \${CONTAINER_NAME} bash -c "
+        apt-get update && apt-get install -y sudo curl wget
+        useradd -ms /bin/bash vscode
+        echo 'vscode ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+        chown -R vscode:vscode /home/workspace
+      "
+    elif ! docker ps --format '{{.Names}}' | grep -q "^\${CONTAINER_NAME}\$"; then
+      docker start \${CONTAINER_NAME}
+    fi
+    ;;
+  stop)
+    docker stop \${CONTAINER_NAME}
+    ;;
+  remove)
+    docker rm -f \${CONTAINER_NAME}
+    ;;
+esac
+EOT
+    chmod +x /opt/hivelab/manage_container.sh
+}
+
+# Main execution
+main() {
+    check_and_set_arch
+    update_and_upgrade
+    install_packages
+    setup_docker_permissions
+    create_hivelab_directory
+    create_on_login_script
+    modify_ssh_config
+    create_container_management_script
+    restart_ssh_service
+
+    print_status "HiveLab setup complete!"
+    print_status "To access HiveLab, use: ssh user@host hivelab"
+    print_status "To bypass HiveLab and get a regular shell, use: ssh user@host bypass"
+    print_status "You may need to log out and log back in for group changes to take effect."
+}
+
+# Run main function
+main
