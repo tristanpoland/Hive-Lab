@@ -81,9 +81,11 @@ USERNAME=$(whoami)
 # Get the container ID
 CONTAINER_ID=$(docker ps --filter name=hivelab-$USERNAME --format '{{.ID}}')
 
-if [ -z "$CONTAINER_ID" ]; then
-    echo "Failed to start or find your HiveLab container. Please contact support."
-    exit 1
+# Check if the container ID is empty
+if [ -z "\$CONTAINER_ID" ]; then
+    echo "Failed to start or find your HiveLab container."
+    echo "Dropping to a regular shell. You can troubleshoot from here."
+    exec /bin/bash  # Drop to a shell if the container cannot be started
 fi
 
 # Execute an interactive bash session in the user's container
