@@ -68,30 +68,26 @@ create_on_login_script() {
     cat > /opt/hivelab/on-login.sh <<EOT
 #!/bin/bash
 
-# Check if bypass command is used
-if [ "\$SSH_ORIGINAL_COMMAND" == "bypass" ]; then
-    exec \$SHELL
+if [ "$SSH_ORIGINAL_COMMAND" == "bypass" ]; then
+    exec $SHELL
     exit 0
 fi
 
-USERNAME=\$(whoami)
+USERNAME=$(whoami)
 
 # Start or ensure the user's container is running
-/opt/hivelab/manage_container.sh \$USERNAME start
+/opt/hivelab/manage_container.sh $USERNAME start
 
 # Get the container ID
-CONTAINER_ID=\$(docker ps --filter name=hivelab-\$USERNAME --format '{{.ID}}')
+CONTAINER_ID=$(docker ps --filter name=hivelab-$USERNAME --format '{{.ID}}')
 
-# Check if the container ID is empty
-if [ -z "\$CONTAINER_ID" ]; then
-    echo "Failed to start or find your HiveLab container."
-    echo "Dropping to a regular shell. You can troubleshoot from here."
-    exec /bin/bash  # Drop to a shell if the container cannot be started
+if [ -z "$CONTAINER_ID" ]; then
+    echo "Failed to start or find your HiveLab container. Please contact support."
+    exit 1
 fi
 
-# Use exec to start an interactive Bash session in the user's container
-echo "Accessing your HiveLab container..."
-exec docker exec -it -e TERM=\$TERM -e LANG=\$LANG -u vscode \$CONTAINER_ID /bin/bash
+# Execute an interactive bash session in the user's container
+exec docker exec -it -e TERM=$TERM -e LANG=$LANG -u vscode $CONTAINER_ID /bin/bash -l
 EOT
     chmod +x /opt/hivelab/on-login.sh
 }
@@ -135,42 +131,39 @@ create_container_management_script() {
     cat > /opt/hivelab/manage_container.sh <<EOT
 #!/bin/bash
 
-USERNAME=\$1
-ACTION=\$2
+USERNAME=$1
+ACTION=$2
 
-CONTAINER_NAME="hivelab-\${USERNAME}"
+CONTAINER_NAME="hivelab-${USERNAME}"
 IMAGE_NAME="ubuntu:latest"
 
-case \$ACTION in
+case $ACTION in
   start)
-    if ! docker ps -a --format '{{.Names}}' | grep -q "^\${CONTAINER_NAME}\$"; then
+    if ! docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
       # Create user's workspace directory if it doesn't exist
-      mkdir -p /home/\${USERNAME}/workspace
-      
+      mkdir -p /home/${USERNAME}/workspace
+      chown /home/${USERNAME}/workspace ${USERNAME}
+
       # Create the container
-      docker run -d --name \${CONTAINER_NAME} \
-        -v /home/\${USERNAME}/workspace:/home/workspace \
-        -v /var/run/docker.sock:/var/run/docker.sock \
-        --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-        \${IMAGE_NAME} sleep infinity
-      
+      docker run -d --name ${CONTAINER_NAME}         -v /home/${USERNAME}/workspace:/home/workspace         -v /var/run/docker.sock:/var/run/docker.sock         --cap-add=SYS_PTRACE --security-opt seccomp=unconfined         ${IMAGE_NAME} sleep infinity
+
       # Set up the container
-      docker exec \${CONTAINER_NAME} bash -c "
+      docker exec ${CONTAINER_NAME} bash -c "
         apt-get update || true
         apt-get install -y sudo curl wget || true
         useradd -ms /bin/bash vscode
         echo 'vscode ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
         chown -R vscode:vscode /home/workspace
       "
-    elif ! docker ps --format '{{.Names}}' | grep -q "^\${CONTAINER_NAME}\$"; then
-      docker start \${CONTAINER_NAME}
+    elif ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+      docker start ${CONTAINER_NAME}
     fi
     ;;
   stop)
-    docker stop \${CONTAINER_NAME}
+    docker stop ${CONTAINER_NAME}
     ;;
   remove)
-    docker rm -f \${CONTAINER_NAME}
+    docker rm -f ${CONTAINER_NAME}
     ;;
 esac
 EOT
