@@ -99,12 +99,22 @@ EOT
 # Modify SSH configuration
 modify_ssh_config() {
     print_status "Modifying SSH configuration..."
-    sudo tee -a /etc/ssh/sshd_config <<EOT
-
+    
+    # Create a temporary file to hold the new configuration
+    TEMP_CONFIG=$(mktemp)
+    
+    # Append the HiveLab configuration to the temporary file
+    cat <<EOT >> "$TEMP_CONFIG"
 # HiveLab configuration
 Match User *,!root
     ForceCommand /opt/hivelab/on-login.sh
 EOT
+
+    # Append the temporary configuration to the existing sshd_config
+    sudo cat "$TEMP_CONFIG" | sudo tee -a /etc/ssh/sshd_config > /dev/null
+
+    # Clean up the temporary file
+    rm -f "$TEMP_CONFIG"
 }
 
 # Restart SSH service
