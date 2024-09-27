@@ -1,5 +1,9 @@
 # HiveLab: A Lightweight Easy to Deploy Lab Environment 🐝🔬
 
+<p align="center">
+<img src="https://github.com/user-attachments/assets/3f34291b-dca5-401f-bec3-39ce55b458aa"></img>
+</p>
+
 ## Table of Contents
 1. [📘 Introduction](#introduction)
 2. [💻 System Requirements](#system-requirements)
