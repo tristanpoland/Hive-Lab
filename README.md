@@ -14,6 +14,8 @@
 
 HiveLab is an easy-to-deploy lab system that provides isolated environments for users on a shared host. It uses Docker containers to create separate workspaces for each user, allowing them to work in their own environment without affecting others or the host system.
 
+![image](https://github.com/user-attachments/assets/f121d68d-c7fd-4516-a93d-21880e50a930)
+
 ## 2. System Requirements 💻
 
 - Ubuntu-based Linux distribution (tested on Ubuntu 20.04 LTS and newer)
@@ -55,6 +57,8 @@ HiveLab consists of several components:
 
 - To access HiveLab: `ssh user@host`
 - To bypass HiveLab and get a regular shell: `ssh user@host bypass`
+
+![image](https://github.com/user-attachments/assets/efe583b1-1f1f-4576-a54a-7167cc7603be)
 
 ### For Administrators 👨‍💼
 
