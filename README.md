@@ -30,9 +30,12 @@ HiveLab is an easy-to-deploy lab system that provides isolated environments for 
 
 ## 3. Installation 🚀
 
-1. Download the installation script to your server.
-2. Make the script executable: `chmod +x ./setup.sh`
-3. Run the script with sudo privileges: `sudo ./setup.sh`
+1. Clone the git repository:
+```https://github.com/tristanpoland/Hive-Lab/tree/main```
+2. Make the main script executable:
+```chmod +x ./setup.sh```
+3. Run the script with sudo privileges:
+```sudo ./setup.sh```
 4. The script will automatically:
    - Update and upgrade system packages
    - Install necessary dependencies (jq, docker.io)
