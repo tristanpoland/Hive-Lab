@@ -21,7 +21,7 @@ case $ACTION in
         ${IMAGE_NAME} sleep infinity
 
       # Set up the container
-      docker exec ${CONTAINER_NAME} bash -c "
+      docker exec ${CONTAINER_NAME} bash -c '
         apt-get update || true
         apt-get install -y sudo curl wget || true
         useradd -ms /bin/bash ${USERNAME}
@@ -29,7 +29,7 @@ case $ACTION in
         echo "${USERNAME}:${USERNAME}" | sudo chpasswd
         echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
         chown -R ${USERNAME}:${USERNAME} /home/workspace
-      "
+      '
     elif ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
       docker start ${CONTAINER_NAME}
     fi
