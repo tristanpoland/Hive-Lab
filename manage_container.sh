@@ -27,7 +27,7 @@ case $ACTION in
         useradd -ms /bin/bash ${USERNAME}
         echo "!!!!!! setting passwd for ${USERNAME}"
         echo "${USERNAME}:${USERNAME}" | sudo chpasswd
-        echo '${USERNAME} ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+        echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
         chown -R ${USERNAME}:${USERNAME} /home/workspace
       "
     elif ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
