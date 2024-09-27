@@ -25,8 +25,6 @@ case $ACTION in
         apt-get update || true
         apt-get install -y sudo curl wget || true
         useradd -ms /bin/bash ${USERNAME}
-        echo "!!!!!! setting passwd for ${USERNAME}"
-        echo "${USERNAME}:${USERNAME}" | sudo chpasswd
         echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
         chown -R ${USERNAME}:${USERNAME} /home/workspace
       '
