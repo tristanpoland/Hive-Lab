@@ -19,4 +19,4 @@ if [ -z "$CONTAINER_ID" ]; then
 fi
 
 # Execute an interactive bash session in the user's container
-exec docker exec -it -e TERM=$TERM -e LANG=$LANG -u vscode $CONTAINER_ID /bin/bash -l
+exec docker exec -it -e TERM=$TERM -e LANG=$LANG -u  $USERNAME $CONTAINER_ID /bin/bash -l

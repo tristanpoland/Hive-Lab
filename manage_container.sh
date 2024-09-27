@@ -11,7 +11,7 @@ case $ACTION in
     if ! docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
       # Create user's workspace directory if it doesn't exist
       mkdir -p /home/${USERNAME}/workspace
-      chown /home/${USERNAME}/workspace ${USERNAME}
+      chown  ${USERNAME} /home/${USERNAME}/workspace
 
       # Create the container
       docker run -d --name ${CONTAINER_NAME} \
@@ -25,8 +25,8 @@ case $ACTION in
         apt-get update || true
         apt-get install -y sudo curl wget || true
         useradd -ms /bin/bash ${USERNAME}
-        echo 'vscode ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-        chown -R vscode:vscode /home/workspace
+        echo '${USERNAME} ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+        chown -R ${USERNAME}:${USERNAME} /home/workspace
       "
     elif ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
       docker start ${CONTAINER_NAME}
