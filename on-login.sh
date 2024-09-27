@@ -7,6 +7,8 @@ fi
 
 USERNAME=$(whoami)
 
+echo "Loggin in ${USERNAME}"
+
 # Start or ensure the user's container is running
 /opt/hivelab/manage_container.sh $USERNAME start
 
