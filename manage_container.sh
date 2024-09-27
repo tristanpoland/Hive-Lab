@@ -24,6 +24,7 @@ case $ACTION in
       docker exec ${CONTAINER_NAME} bash -c '
         apt-get update || true
         apt-get install -y sudo curl wget || true
+        echo "useradd -ms /bin/bash ${USERNAME}"
         useradd -ms /bin/bash ${USERNAME}
         echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
         chown -R ${USERNAME}:${USERNAME} /home/workspace
