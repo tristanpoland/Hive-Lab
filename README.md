@@ -1,18 +1,18 @@
-# HiveLab: A Lightweight Easy to Deploy Lab Environment 🐝🔬
 
+<h1 align="center"> HiveLab: A Lightweight Easy to Deploy Lab Environment 🐝🔬</h1>
 <p align="center">
-<img src="https://github.com/user-attachments/assets/3f34291b-dca5-401f-bec3-39ce55b458aa"></img>
+<img width="300px" src="https://github.com/user-attachments/assets/3f34291b-dca5-401f-bec3-39ce55b458aa"></img>
 </p>
 
 ## Table of Contents
-1. [📘 Introduction](#introduction)
-2. [💻 System Requirements](#system-requirements)
-3. [🚀 Installation](#installation)
-4. [🧩 Components](#components)
-5. [🔧 Usage](#usage)
-6. [🛡️ Security Considerations](#security-considerations)
-7. [🐞 Troubleshooting](#troubleshooting)
-8. [🎨 Customization](#customization)
+1. [📘 Introduction](#1-introduction-)
+2. [💻 System Requirements](#2-system-requirements-)
+3. [🚀 Installation](#3-installation-)
+4. [🧩 Components](#4-components-)
+5. [🔧 Usage](#5-usage-)
+6. [🛡️ Security Considerations](#6-security-considerations-%EF%B8%8F)
+7. [🐞 Troubleshooting](#7-troubleshooting-)
+8. [🎨 Customization](#8-customization-)
 
 ## 1. Introduction 📘
 
