@@ -18,7 +18,8 @@
 
 HiveLab is an easy-to-deploy lab system that provides isolated environments for users on a shared host. It uses Docker containers to create separate workspaces for each user, allowing them to work in their own environment without affecting others or the host system.
 
-![image](https://github.com/user-attachments/assets/f121d68d-c7fd-4516-a93d-21880e50a930)
+![image](https://github.com/user-attachments/assets/97945e30-95f2-4a1d-b748-62728188e3a3)
+
 
 ## 2. System Requirements 💻
 
